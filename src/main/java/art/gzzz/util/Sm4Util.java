@@ -3,7 +3,8 @@ package art.gzzz.util;
 import art.gzzz.common.constant.CommonConstant;
 import art.gzzz.common.enums.AlgEnums;
 import art.gzzz.common.enums.IEnum;
-import art.gzzz.web.vo.request.Sm4Request;
+import art.gzzz.web.domain.request.Sm4Request;
+import art.gzzz.web.exception.base.BusinessException;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import java.security.Key;
@@ -33,6 +34,72 @@ public class Sm4Util {
     public static final String ALGORITHM_NAME = "SM4";
     public static final int DEFAULT_KEY_BIT_SIZE = 128;
     public static final int DEFAULT_KEY_BYTE_SIZE = 16;
+
+    /**
+     * sm4加密
+     *
+     * @param request request
+     * @return String 返回Base64的加密字符串
+     * @throws Exception Exception
+     */
+    public static String encrypt(Sm4Request request) throws Exception {
+
+        byte[] keyData = handleKey(request);
+
+        // String-->byte[]
+        byte[] srcData = request.getData().getBytes(ENCODING);
+        // 加密后的数组
+        byte[] encryptArray = encryptPadding(request.getAlgorithmName(), request.getMode(), keyData, srcData);
+
+        return new String(Base64.encode(encryptArray));
+    }
+
+    /**
+     * sm4解密
+     *
+     * @return String 解密后的字符串
+     * @throws Exception Exception
+     */
+    public static String decrypt(Sm4Request request) throws Exception {
+
+        byte[] keyData = handleKey(request);
+
+        byte[] srcData = Base64.decode(request.getData());
+        // 解密
+        byte[] decryptArray = decryptPadding(request.getAlgorithmName(), request.getMode(), keyData, srcData);
+        // byte[]-->String
+        return new String(decryptArray);
+    }
+
+    /**
+     * 加密
+     *
+     * @param algorithmName algorithmName
+     * @param mode          mode
+     * @param key           key
+     * @param data          data
+     * @return byte[]
+     * @throws Exception Exception
+     */
+    public static byte[] encryptPadding(String algorithmName, String mode, byte[] key, byte[] data) throws Exception {
+        Cipher cipher = generateCipher(algorithmName, mode, key, Cipher.ENCRYPT_MODE);
+        return cipher.doFinal(data);
+    }
+
+    /**
+     * 解密
+     *
+     * @param algorithmName algorithmName
+     * @param mode          mode
+     * @param key           key
+     * @param data          data
+     * @return byte[]
+     * @throws Exception Exception
+     */
+    public static byte[] decryptPadding(String algorithmName, String mode, byte[] key, byte[] data) throws Exception {
+        Cipher cipher = generateCipher(algorithmName, mode, key, Cipher.DECRYPT_MODE);
+        return cipher.doFinal(data);
+    }
 
     /**
      * generateCipher
@@ -75,104 +142,6 @@ public class Sm4Util {
     }
 
     /**
-     * sm4加密
-     *
-     * @param request request
-     * @return String 返回Base64的加密字符串
-     * @throws Exception Exception
-     */
-    public static String encrypt(Sm4Request request) throws Exception {
-
-        byte[] keyData = new byte[0];
-
-        if (CommonConstant.TEXT.equals(request.getKeyType())) {
-            keyData = request.getKey().getBytes();
-        }
-
-        if (CommonConstant.HEX.equals(request.getKeyType())) {
-            keyData = ByteUtils.fromHexString(request.getKey());
-        }
-
-        if (CommonConstant.BASE64.equals(request.getKeyType())) {
-            keyData = Base64.decode(request.getKey());
-        }
-
-        if (keyData.length != DEFAULT_KEY_BYTE_SIZE) {
-            throw new Exception("密钥长度必须为128位");
-        }
-
-        // String-->byte[]
-        byte[] srcData = request.getData().getBytes(ENCODING);
-        // 加密后的数组
-        byte[] encryptArray = encryptPadding(request.getAlgorithmName(), request.getMode(), keyData, srcData);
-
-        return new String(Base64.encode(encryptArray));
-    }
-
-    /**
-     * 加密
-     *
-     * @param algorithmName algorithmName
-     * @param mode          mode
-     * @param key           key
-     * @param data          data
-     * @return byte[]
-     * @throws Exception Exception
-     */
-    public static byte[] encryptPadding(String algorithmName, String mode, byte[] key, byte[] data) throws Exception {
-        Cipher cipher = generateCipher(algorithmName, mode, key, Cipher.ENCRYPT_MODE);
-        return cipher.doFinal(data);
-    }
-
-    /**
-     * sm4解密
-     *
-     * @return String 解密后的字符串
-     * @throws Exception Exception
-     */
-    public static String decrypt(Sm4Request request) throws Exception {
-
-        byte[] keyData = new byte[0];
-
-        if (CommonConstant.TEXT.equals(request.getKeyType())) {
-            keyData = request.getKey().getBytes();
-        }
-
-        if (CommonConstant.HEX.equals(request.getKeyType())) {
-            keyData = ByteUtils.fromHexString(request.getKey());
-        }
-
-        if (CommonConstant.BASE64.equals(request.getKeyType())) {
-            keyData = Base64.decode(request.getKey());
-        }
-
-        if (keyData.length != DEFAULT_KEY_BYTE_SIZE) {
-            throw new Exception("密钥长度必须为128位");
-        }
-
-        byte[] srcData = Base64.decode(request.getData());
-        // 解密
-        byte[] decryptArray = decryptPadding(request.getAlgorithmName(), request.getMode(), keyData, srcData);
-        // byte[]-->String
-        return new String(decryptArray);
-    }
-
-    /**
-     * 解密
-     *
-     * @param algorithmName algorithmName
-     * @param mode          mode
-     * @param key           key
-     * @param data          data
-     * @return byte[]
-     * @throws Exception Exception
-     */
-    public static byte[] decryptPadding(String algorithmName, String mode, byte[] key, byte[] data) throws Exception {
-        Cipher cipher = generateCipher(algorithmName, mode, key, Cipher.DECRYPT_MODE);
-        return cipher.doFinal(data);
-    }
-
-    /**
      * 校验加密前后的字符串是否为同一数据
      *
      * @param hexKey     16进制密钥（忽略大小写）
@@ -195,6 +164,29 @@ public class Sm4Util {
         // 判断2个数组是否一致
         flag = Arrays.equals(decryptData, srcData);
         return flag;
+    }
+
+    private static byte[] handleKey(Sm4Request request) {
+
+        byte[] keyData = new byte[0];
+
+        if (CommonConstant.TEXT.equals(request.getKeyType())) {
+            keyData = request.getKey().getBytes();
+        }
+
+        if (CommonConstant.HEX.equals(request.getKeyType())) {
+            keyData = ByteUtils.fromHexString(request.getKey());
+        }
+
+        if (CommonConstant.BASE64.equals(request.getKeyType())) {
+            keyData = Base64.decode(request.getKey());
+        }
+
+        if (keyData.length != DEFAULT_KEY_BYTE_SIZE) {
+            throw new BusinessException("密钥长度必须为128位");
+        }
+
+        return keyData;
     }
 
 }

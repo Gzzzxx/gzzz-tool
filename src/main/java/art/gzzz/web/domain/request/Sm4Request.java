@@ -1,4 +1,4 @@
-package art.gzzz.web.vo.request;
+package art.gzzz.web.domain.request;
 
 import lombok.Data;
 

@@ -4,7 +4,7 @@ import art.gzzz.common.annotation.Log;
 import art.gzzz.common.annotation.Repeat;
 import art.gzzz.common.enums.BusinessType;
 import art.gzzz.util.Sm4Util;
-import art.gzzz.web.vo.request.Sm4Request;
+import art.gzzz.web.domain.request.Sm4Request;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
