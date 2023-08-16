@@ -5,6 +5,7 @@ import art.gzzz.common.enums.AlgEnums;
 import art.gzzz.common.enums.IEnum;
 import art.gzzz.web.vo.request.Sm4Request;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+
 import java.security.Key;
 import java.security.SecureRandom;
 import java.security.Security;
@@ -12,12 +13,14 @@ import java.util.Arrays;
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.spec.SecretKeySpec;
+
 import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 import org.bouncycastle.util.encoders.Base64;
 
 /**
  * sm4加密算法工具类
  * sm4加密、解密与加密结果验证 可逆算法
+ *
  * @author gz
  */
 public class Sm4Util {
@@ -32,15 +35,15 @@ public class Sm4Util {
     public static final int DEFAULT_KEY_BYTE_SIZE = 16;
 
     /**
-     * 生成ECB暗号
-     * ECB模式（电子密码本模式：Electronic codebook）
+     * generateCipher
+     *
      * @param algorithmName 算法名称
-     * @param mode 模式
-     * @param key key
+     * @param mode          模式
+     * @param key           key
      * @return Cipher
      * @throws Exception Exception
      */
-    private static Cipher generateEcbCipher(String algorithmName, String mode, byte[] key, int opMode) throws Exception {
+    private static Cipher generateCipher(String algorithmName, String mode, byte[] key, int opMode) throws Exception {
         IEnum.CipherAlgorithmEnum cipherAlgorithmEnum = IEnum.CipherAlgorithmEnum.match(AlgEnums.ModeEnum.match(mode), algorithmName);
         Cipher cipher = Cipher.getInstance(cipherAlgorithmEnum.getAlgorithm(), BouncyCastleProvider.PROVIDER_NAME);
         Key sm4Key = new SecretKeySpec(key, ALGORITHM_NAME);
@@ -59,6 +62,8 @@ public class Sm4Util {
     }
 
     /**
+     * 自动生成密钥
+     *
      * @param keySize keySize
      * @return byte[]
      * @throws Exception Exception
@@ -72,7 +77,8 @@ public class Sm4Util {
     /**
      * sm4加密
      *
-     * @return 返回16进制的加密字符串
+     * @param request request
+     * @return String 返回Base64的加密字符串
      * @throws Exception Exception
      */
     public static String encrypt(Sm4Request request) throws Exception {
@@ -104,21 +110,24 @@ public class Sm4Util {
     }
 
     /**
-     * 加密模式之Ecb
-     * @param key key
-     * @param data data
+     * 加密
+     *
+     * @param algorithmName algorithmName
+     * @param mode          mode
+     * @param key           key
+     * @param data          data
      * @return byte[]
      * @throws Exception Exception
      */
     public static byte[] encryptPadding(String algorithmName, String mode, byte[] key, byte[] data) throws Exception {
-        Cipher cipher = generateEcbCipher(algorithmName, mode, key, Cipher.ENCRYPT_MODE);
+        Cipher cipher = generateCipher(algorithmName, mode, key, Cipher.ENCRYPT_MODE);
         return cipher.doFinal(data);
     }
 
     /**
      * sm4解密
      *
-     * @return 解密后的字符串
+     * @return String 解密后的字符串
      * @throws Exception Exception
      */
     public static String decrypt(Sm4Request request) throws Exception {
@@ -141,7 +150,6 @@ public class Sm4Util {
             throw new Exception("密钥长度必须为128位");
         }
 
-        // String-->byte[]
         byte[] srcData = Base64.decode(request.getData());
         // 解密
         byte[] decryptArray = decryptPadding(request.getAlgorithmName(), request.getMode(), keyData, srcData);
@@ -151,22 +159,26 @@ public class Sm4Util {
 
     /**
      * 解密
-     * @param key key
-     * @param data data
+     *
+     * @param algorithmName algorithmName
+     * @param mode          mode
+     * @param key           key
+     * @param data          data
      * @return byte[]
      * @throws Exception Exception
      */
     public static byte[] decryptPadding(String algorithmName, String mode, byte[] key, byte[] data) throws Exception {
-        Cipher cipher = generateEcbCipher(algorithmName, mode, key, Cipher.DECRYPT_MODE);
+        Cipher cipher = generateCipher(algorithmName, mode, key, Cipher.DECRYPT_MODE);
         return cipher.doFinal(data);
     }
 
     /**
      * 校验加密前后的字符串是否为同一数据
-     * @param hexKey 16进制密钥（忽略大小写）
+     *
+     * @param hexKey     16进制密钥（忽略大小写）
      * @param cipherText 16进制加密后的字符串
-     * @param paramStr 加密前的字符串
-     * @return 是否为同一数据
+     * @param paramStr   加密前的字符串
+     * @return boolean 是否为同一数据
      * @throws Exception Exception
      */
     public static boolean verifyEcb(String algorithmName, String mode, String hexKey, String cipherText, String paramStr) throws Exception {
