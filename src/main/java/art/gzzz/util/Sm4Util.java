@@ -28,9 +28,6 @@ public class Sm4Util {
 
     private static final String ENCODING = "UTF-8";
     public static final String ALGORITHM_NAME = "SM4";
-    /**
-     * 128-32位16进制；256-64位16进制
-     */
     public static final int DEFAULT_KEY_BIT_SIZE = 128;
     public static final int DEFAULT_KEY_BYTE_SIZE = 16;
 
