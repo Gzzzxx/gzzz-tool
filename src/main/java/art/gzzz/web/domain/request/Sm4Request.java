@@ -18,4 +18,6 @@ public class Sm4Request {
 
     private String data;
 
+    private String dataType;
+
 }

@@ -1,6 +1,6 @@
 package art.gzzz.web.exception;
 
-import art.gzzz.web.domain.response.Result;
+import art.gzzz.web.domain.response.result.Result;
 import art.gzzz.web.exception.base.BusinessException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.HttpRequestMethodNotSupportedException;

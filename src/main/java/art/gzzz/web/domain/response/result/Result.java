@@ -1,4 +1,4 @@
-package art.gzzz.web.domain.response;
+package art.gzzz.web.domain.response.result;
 
 import lombok.Data;
 import lombok.experimental.Accessors;

@@ -4,6 +4,7 @@ import art.gzzz.common.constant.CommonConstant;
 import art.gzzz.common.enums.AlgEnums;
 import art.gzzz.common.enums.IEnum;
 import art.gzzz.web.domain.request.Sm4Request;
+import art.gzzz.web.domain.response.Sm4Response;
 import art.gzzz.web.exception.base.BusinessException;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
@@ -42,7 +43,9 @@ public class Sm4Util {
      * @return String 返回Base64的加密字符串
      * @throws Exception Exception
      */
-    public static String encrypt(Sm4Request request) throws Exception {
+    public static Sm4Response encrypt(Sm4Request request) throws Exception {
+
+        Sm4Response response = new Sm4Response();
 
         byte[] keyData = handleKey(request);
 
@@ -51,7 +54,9 @@ public class Sm4Util {
         // 加密后的数组
         byte[] encryptArray = encryptPadding(request.getAlgorithmName(), request.getMode(), keyData, srcData);
 
-        return new String(Base64.encode(encryptArray));
+        response.setData(new String(Base64.encode(encryptArray)));
+
+        return response;
     }
 
     /**
@@ -60,15 +65,19 @@ public class Sm4Util {
      * @return String 解密后的字符串
      * @throws Exception Exception
      */
-    public static String decrypt(Sm4Request request) throws Exception {
+    public static Sm4Response decrypt(Sm4Request request) throws Exception {
+
+        Sm4Response response = new Sm4Response();
 
         byte[] keyData = handleKey(request);
 
-        byte[] srcData = Base64.decode(request.getData());
+        byte[] srcData = handleData(request);
         // 解密
         byte[] decryptArray = decryptPadding(request.getAlgorithmName(), request.getMode(), keyData, srcData);
         // byte[]-->String
-        return new String(decryptArray);
+        response.setData(new String(decryptArray));
+
+        return response;
     }
 
     /**
@@ -187,6 +196,25 @@ public class Sm4Util {
         }
 
         return keyData;
+    }
+
+    private static byte[] handleData(Sm4Request request) {
+
+        byte[] data = new byte[0];
+
+        if (CommonConstant.TEXT.equals(request.getDataType())) {
+            data = request.getData().getBytes();
+        }
+
+        if (CommonConstant.HEX.equals(request.getDataType())) {
+            data = ByteUtils.fromHexString(request.getData());
+        }
+
+        if (CommonConstant.BASE64.equals(request.getDataType())) {
+            data = Base64.decode(request.getData());
+        }
+
+        return data;
     }
 
 }
