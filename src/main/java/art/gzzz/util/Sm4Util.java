@@ -7,17 +7,16 @@ import art.gzzz.web.domain.request.Sm4Request;
 import art.gzzz.web.domain.response.Sm4Response;
 import art.gzzz.web.exception.base.BusinessException;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
+import org.bouncycastle.util.encoders.Base64;
 
+import javax.crypto.Cipher;
+import javax.crypto.KeyGenerator;
+import javax.crypto.spec.SecretKeySpec;
 import java.security.Key;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.util.Arrays;
-import javax.crypto.Cipher;
-import javax.crypto.KeyGenerator;
-import javax.crypto.spec.SecretKeySpec;
-
-import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
-import org.bouncycastle.util.encoders.Base64;
 
 /**
  * sm4加密算法工具类
@@ -35,12 +34,14 @@ public class Sm4Util {
     public static final String ALGORITHM_NAME = "SM4";
     public static final int DEFAULT_KEY_BIT_SIZE = 128;
     public static final int DEFAULT_KEY_BYTE_SIZE = 16;
+    public static final String ENCRYPT = "ENCRYPT";
+    public static final String DECRYPT = "DECRYPT";
 
     /**
      * sm4加密
      *
      * @param request request
-     * @return String 返回Base64的加密字符串
+     * @return Sm4Response
      * @throws Exception Exception
      */
     public static Sm4Response encrypt(Sm4Request request) throws Exception {
@@ -49,9 +50,8 @@ public class Sm4Util {
 
         byte[] keyData = handleKey(request);
 
-        // String-->byte[]
-        byte[] srcData = request.getData().getBytes(ENCODING);
-        // 加密后的数组
+        byte[] srcData = handleData(request, ENCRYPT);
+
         byte[] encryptArray = encryptPadding(request.getAlgorithmName(), request.getMode(), keyData, srcData);
 
         response.setData(new String(Base64.encode(encryptArray)));
@@ -62,7 +62,7 @@ public class Sm4Util {
     /**
      * sm4解密
      *
-     * @return String 解密后的字符串
+     * @return Sm4Response
      * @throws Exception Exception
      */
     public static Sm4Response decrypt(Sm4Request request) throws Exception {
@@ -71,10 +71,10 @@ public class Sm4Util {
 
         byte[] keyData = handleKey(request);
 
-        byte[] srcData = handleData(request);
-        // 解密
+        byte[] srcData = handleData(request, DECRYPT);
+
         byte[] decryptArray = decryptPadding(request.getAlgorithmName(), request.getMode(), keyData, srcData);
-        // byte[]-->String
+
         response.setData(new String(decryptArray));
 
         return response;
@@ -198,12 +198,18 @@ public class Sm4Util {
         return keyData;
     }
 
-    private static byte[] handleData(Sm4Request request) {
+    private static byte[] handleData(Sm4Request request, String type) {
 
         byte[] data = new byte[0];
 
         if (CommonConstant.TEXT.equals(request.getDataType())) {
-            data = request.getData().getBytes();
+            if (ENCRYPT.equals(type)) {
+                data = request.getData().getBytes();
+            }
+            if (DECRYPT.equals(type)) {
+                DecideUtil.decideBase64(request.getData());
+                data = Base64.decode(request.getData());
+            }
         }
 
         if (CommonConstant.HEX.equals(request.getDataType())) {
@@ -211,6 +217,7 @@ public class Sm4Util {
         }
 
         if (CommonConstant.BASE64.equals(request.getDataType())) {
+            DecideUtil.decideBase64(request.getData());
             data = Base64.decode(request.getData());
         }
 

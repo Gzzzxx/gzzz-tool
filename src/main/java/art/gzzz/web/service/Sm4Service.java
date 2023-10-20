@@ -10,17 +10,19 @@ public interface Sm4Service {
 
   /**
    * encrypt
+   *
    * @param request request
    * @return Sm4Response
-   * @throws Exception exception
+   * @throws Exception Exception
    */
   Sm4Response encrypt(Sm4Request request) throws Exception;
 
   /**
    * decrypt
+   *
    * @param request request
    * @return Sm4Response
-   * @throws Exception exception
+   * @throws Exception Exception
    */
   Sm4Response decrypt(Sm4Request request) throws Exception;
 }
