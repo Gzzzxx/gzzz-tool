@@ -6,17 +6,20 @@ import art.gzzz.common.enums.IEnum;
 import art.gzzz.web.domain.request.Sm4Request;
 import art.gzzz.web.domain.response.Sm4Response;
 import art.gzzz.web.exception.base.BusinessException;
+import cn.hutool.core.util.StrUtil;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 import org.bouncycastle.util.encoders.Base64;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
+import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-import java.security.Key;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.util.Arrays;
+
+import static art.gzzz.common.constant.CommonConstant.*;
 
 /**
  * sm4加密算法工具类
@@ -46,13 +49,17 @@ public class Sm4Util {
      */
     public static Sm4Response encrypt(Sm4Request request) throws Exception {
 
+        checkParam(request);
+
         Sm4Response response = new Sm4Response();
 
         byte[] keyData = handleKey(request);
 
         byte[] srcData = handleData(request, ENCRYPT);
 
-        byte[] encryptArray = encryptPadding(request.getAlgorithmName(), request.getMode(), keyData, srcData);
+        byte[] ivData = handleIv(request);
+
+        byte[] encryptArray = encryptPadding(request.getAlgorithmName(), request.getMode(), keyData, srcData, ivData);
 
         response.setData(new String(Base64.encode(encryptArray)));
 
@@ -67,13 +74,17 @@ public class Sm4Util {
      */
     public static Sm4Response decrypt(Sm4Request request) throws Exception {
 
+        checkParam(request);
+
         Sm4Response response = new Sm4Response();
 
         byte[] keyData = handleKey(request);
 
         byte[] srcData = handleData(request, DECRYPT);
 
-        byte[] decryptArray = decryptPadding(request.getAlgorithmName(), request.getMode(), keyData, srcData);
+        byte[] ivData = handleIv(request);
+
+        byte[] decryptArray = decryptPadding(request.getAlgorithmName(), request.getMode(), keyData, srcData, ivData);
 
         response.setData(new String(decryptArray));
 
@@ -87,11 +98,12 @@ public class Sm4Util {
      * @param mode          mode
      * @param key           key
      * @param data          data
+     * @param iv            iv
      * @return byte[]
      * @throws Exception Exception
      */
-    public static byte[] encryptPadding(String algorithmName, String mode, byte[] key, byte[] data) throws Exception {
-        Cipher cipher = generateCipher(algorithmName, mode, key, Cipher.ENCRYPT_MODE);
+    public static byte[] encryptPadding(String algorithmName, String mode, byte[] key, byte[] data, byte[] iv) throws Exception {
+        Cipher cipher = generateCipher(algorithmName, mode, key, Cipher.ENCRYPT_MODE, iv);
         return cipher.doFinal(data);
     }
 
@@ -102,12 +114,17 @@ public class Sm4Util {
      * @param mode          mode
      * @param key           key
      * @param data          data
+     * @param iv            iv
      * @return byte[]
      * @throws Exception Exception
      */
-    public static byte[] decryptPadding(String algorithmName, String mode, byte[] key, byte[] data) throws Exception {
-        Cipher cipher = generateCipher(algorithmName, mode, key, Cipher.DECRYPT_MODE);
-        return cipher.doFinal(data);
+    public static byte[] decryptPadding(String algorithmName, String mode, byte[] key, byte[] data, byte[] iv) throws Exception {
+        Cipher cipher = generateCipher(algorithmName, mode, key, Cipher.DECRYPT_MODE, iv);
+        try {
+            return cipher.doFinal(data);
+        } catch (Exception e) {
+            throw new BusinessException(e.getMessage());
+        }
     }
 
     /**
@@ -119,11 +136,22 @@ public class Sm4Util {
      * @return Cipher
      * @throws Exception Exception
      */
-    private static Cipher generateCipher(String algorithmName, String mode, byte[] key, int opMode) throws Exception {
+    private static Cipher generateCipher(String algorithmName, String mode, byte[] key, int opMode, byte[] iv) throws Exception {
         IEnum.CipherAlgorithmEnum cipherAlgorithmEnum = IEnum.CipherAlgorithmEnum.match(AlgEnums.ModeEnum.match(mode), algorithmName);
         Cipher cipher = Cipher.getInstance(cipherAlgorithmEnum.getAlgorithm(), BouncyCastleProvider.PROVIDER_NAME);
-        Key sm4Key = new SecretKeySpec(key, ALGORITHM_NAME);
-        cipher.init(opMode, sm4Key);
+        SecretKeySpec sm4Key = new SecretKeySpec(key, ALGORITHM_NAME);
+        try {
+            if (ECB.equals(mode)) {
+                cipher.init(opMode, sm4Key);
+            }
+            if (CBC.equals(mode)) {
+                IvParameterSpec ivParameterSpec = new IvParameterSpec(iv);
+                cipher.init(opMode, sm4Key, ivParameterSpec);
+            }
+        } catch (Exception e) {
+            throw new BusinessException(e.getMessage());
+        }
+
         return cipher;
     }
 
@@ -166,8 +194,10 @@ public class Sm4Util {
         byte[] keyData = ByteUtils.fromHexString(hexKey);
         // 将16进制字符串转换成数组
         byte[] cipherData = ByteUtils.fromHexString(cipherText);
+
+        byte[] iv = new byte[0];
         // 解密
-        byte[] decryptData = decryptPadding(algorithmName, mode, keyData, cipherData);
+        byte[] decryptData = decryptPadding(algorithmName, mode, keyData, cipherData, iv);
         // 将原字符串转换成byte[]
         byte[] srcData = paramStr.getBytes(ENCODING);
         // 判断2个数组是否一致
@@ -188,11 +218,12 @@ public class Sm4Util {
         }
 
         if (CommonConstant.BASE64.equals(request.getKeyType())) {
+            DecideUtil.decideBase64(request.getKey(), KEY);
             keyData = Base64.decode(request.getKey());
         }
 
         if (keyData.length != DEFAULT_KEY_BYTE_SIZE) {
-            throw new BusinessException("密钥长度必须为128位");
+            throw new BusinessException("密钥长度必须为128位！");
         }
 
         return keyData;
@@ -207,7 +238,7 @@ public class Sm4Util {
                 data = request.getData().getBytes();
             }
             if (DECRYPT.equals(type)) {
-                DecideUtil.decideBase64(request.getData());
+                DecideUtil.decideBase64(request.getData(), DATA);
                 data = Base64.decode(request.getData());
             }
         }
@@ -217,11 +248,45 @@ public class Sm4Util {
         }
 
         if (CommonConstant.BASE64.equals(request.getDataType())) {
-            DecideUtil.decideBase64(request.getData());
+            DecideUtil.decideBase64(request.getData(), DATA);
             data = Base64.decode(request.getData());
         }
 
         return data;
+    }
+
+    private static byte[] handleIv(Sm4Request request) {
+
+        byte[] data = new byte[0];
+
+        if (CBC.equals(request.getMode())) {
+
+            if (CommonConstant.HEX.equals(request.getKeyType())) {
+                data = ByteUtils.fromHexString(request.getIv());
+            }
+
+            if (CommonConstant.BASE64.equals(request.getKeyType())) {
+                DecideUtil.decideBase64(request.getIv(), IV);
+                data = Base64.decode(request.getIv());
+            }
+        }
+
+        return data;
+    }
+
+    private static void checkParam(Sm4Request request) {
+
+        if (StrUtil.isBlank(request.getData())) {
+            throw new BusinessException("请输入加密/解密内容！");
+        }
+
+        if (StrUtil.isBlank(request.getKey())) {
+            throw new BusinessException("请输入密钥！");
+        }
+
+        if (CBC.equals(request.getMode()) && StrUtil.isBlank(request.getIv())) {
+            throw new BusinessException("CBC模式向量不能为空！");
+        }
     }
 
 }
