@@ -48,7 +48,11 @@ public interface IEnum {
         /**
          * SM4_ECB_PKCS5PADDING
          */
-        SM4_ECB_PKCS5PADDING("SM4/ECB/PKCS5Padding", "ECB", "PKCS5Padding", false, IEnum.KeyAlgorithmEnum.SM4_128);
+        SM4_ECB_PKCS5PADDING("SM4/ECB/PKCS5Padding", "ECB", "PKCS5Padding", false, IEnum.KeyAlgorithmEnum.SM4_128),
+        /**
+         * SM4_CTR_NOPADDING
+         */
+        SM4_CTR_NOPADDING("SM4/CTR/NoPadding", "CTR", "NoPadding", true, IEnum.KeyAlgorithmEnum.SM4_128);
 
         private final String algorithm;
         private final String mode;

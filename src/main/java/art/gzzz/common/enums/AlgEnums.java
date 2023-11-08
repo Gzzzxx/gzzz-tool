@@ -19,7 +19,11 @@ public interface AlgEnums extends BaseEnums {
         /**
          * CBC
          */
-        CBC(true);
+        CBC(true),
+        /**
+         * CTR
+         */
+        CTR(true);
 
         private final boolean isNeedIv;
 

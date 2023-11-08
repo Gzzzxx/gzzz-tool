@@ -127,7 +127,7 @@ public class Sm4Util {
             if (ECB.equals(mode)) {
                 cipher.init(opMode, sm4Key);
             }
-            if (CBC.equals(mode)) {
+            if (CBC.equals(mode) || CTR.equals(mode)) {
                 IvParameterSpec ivParameterSpec = new IvParameterSpec(iv);
                 cipher.init(opMode, sm4Key, ivParameterSpec);
             }
@@ -215,7 +215,7 @@ public class Sm4Util {
 
         byte[] data = new byte[0];
 
-        if (CBC.equals(request.getMode())) {
+        if (CBC.equals(request.getMode()) || CTR.equals(request.getMode())) {
 
             if (CommonConstant.HEX.equals(request.getKeyType())) {
                 data = ByteUtils.fromHexString(request.getIv());
@@ -242,6 +242,10 @@ public class Sm4Util {
 
         if (CBC.equals(request.getMode()) && StrUtil.isBlank(request.getIv())) {
             throw new BusinessException("CBC模式向量不能为空！");
+        }
+
+        if (CTR.equals(request.getMode()) && StrUtil.isBlank(request.getIv())) {
+            throw new BusinessException("CTR模式向量不能为空！");
         }
     }
 
