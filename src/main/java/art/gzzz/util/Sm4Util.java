@@ -17,7 +17,6 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.security.SecureRandom;
 import java.security.Security;
-import java.util.Arrays;
 
 import static art.gzzz.common.constant.CommonConstant.*;
 
@@ -55,11 +54,11 @@ public class Sm4Util {
 
         byte[] keyData = handleKey(request);
 
-        byte[] srcData = handleData(request, ENCRYPT);
-
         byte[] ivData = handleIv(request);
 
-        byte[] encryptArray = encryptPadding(request.getAlgorithmName(), request.getMode(), keyData, srcData, ivData);
+        byte[] srcData = handleData(request, ENCRYPT);
+
+        byte[] encryptArray = operate(request.getAlgorithmName(), request.getMode(), keyData, ivData, srcData, Cipher.ENCRYPT_MODE);
 
         response.setData(new String(Base64.encode(encryptArray)));
 
@@ -80,11 +79,11 @@ public class Sm4Util {
 
         byte[] keyData = handleKey(request);
 
-        byte[] srcData = handleData(request, DECRYPT);
-
         byte[] ivData = handleIv(request);
 
-        byte[] decryptArray = decryptPadding(request.getAlgorithmName(), request.getMode(), keyData, srcData, ivData);
+        byte[] srcData = handleData(request, DECRYPT);
+
+        byte[] decryptArray = operate(request.getAlgorithmName(), request.getMode(), keyData, ivData, srcData, Cipher.DECRYPT_MODE);
 
         response.setData(new String(decryptArray));
 
@@ -92,7 +91,7 @@ public class Sm4Util {
     }
 
     /**
-     * 加密
+     * 加密/解密
      *
      * @param algorithmName algorithmName
      * @param mode          mode
@@ -102,24 +101,8 @@ public class Sm4Util {
      * @return byte[]
      * @throws Exception Exception
      */
-    public static byte[] encryptPadding(String algorithmName, String mode, byte[] key, byte[] data, byte[] iv) throws Exception {
-        Cipher cipher = generateCipher(algorithmName, mode, key, Cipher.ENCRYPT_MODE, iv);
-        return cipher.doFinal(data);
-    }
-
-    /**
-     * 解密
-     *
-     * @param algorithmName algorithmName
-     * @param mode          mode
-     * @param key           key
-     * @param data          data
-     * @param iv            iv
-     * @return byte[]
-     * @throws Exception Exception
-     */
-    public static byte[] decryptPadding(String algorithmName, String mode, byte[] key, byte[] data, byte[] iv) throws Exception {
-        Cipher cipher = generateCipher(algorithmName, mode, key, Cipher.DECRYPT_MODE, iv);
+    public static byte[] operate(String algorithmName, String mode, byte[] key, byte[] iv, byte[] data, int opMode) throws Exception {
+        Cipher cipher = generateCipher(algorithmName, mode, key, iv, opMode);
         try {
             return cipher.doFinal(data);
         } catch (Exception e) {
@@ -136,7 +119,7 @@ public class Sm4Util {
      * @return Cipher
      * @throws Exception Exception
      */
-    private static Cipher generateCipher(String algorithmName, String mode, byte[] key, int opMode, byte[] iv) throws Exception {
+    private static Cipher generateCipher(String algorithmName, String mode, byte[] key, byte[] iv, int opMode) throws Exception {
         IEnum.CipherAlgorithmEnum cipherAlgorithmEnum = IEnum.CipherAlgorithmEnum.match(AlgEnums.ModeEnum.match(mode), algorithmName);
         Cipher cipher = Cipher.getInstance(cipherAlgorithmEnum.getAlgorithm(), BouncyCastleProvider.PROVIDER_NAME);
         SecretKeySpec sm4Key = new SecretKeySpec(key, ALGORITHM_NAME);
@@ -176,33 +159,6 @@ public class Sm4Util {
         KeyGenerator kg = KeyGenerator.getInstance(ALGORITHM_NAME, BouncyCastleProvider.PROVIDER_NAME);
         kg.init(keySize, new SecureRandom());
         return kg.generateKey().getEncoded();
-    }
-
-    /**
-     * 校验加密前后的字符串是否为同一数据
-     *
-     * @param hexKey     16进制密钥（忽略大小写）
-     * @param cipherText 16进制加密后的字符串
-     * @param paramStr   加密前的字符串
-     * @return boolean 是否为同一数据
-     * @throws Exception Exception
-     */
-    public static boolean verifyEcb(String algorithmName, String mode, String hexKey, String cipherText, String paramStr) throws Exception {
-        // 用于接收校验结果
-        boolean flag = false;
-        // hexString-->byte[]
-        byte[] keyData = ByteUtils.fromHexString(hexKey);
-        // 将16进制字符串转换成数组
-        byte[] cipherData = ByteUtils.fromHexString(cipherText);
-
-        byte[] iv = new byte[0];
-        // 解密
-        byte[] decryptData = decryptPadding(algorithmName, mode, keyData, cipherData, iv);
-        // 将原字符串转换成byte[]
-        byte[] srcData = paramStr.getBytes(ENCODING);
-        // 判断2个数组是否一致
-        flag = Arrays.equals(decryptData, srcData);
-        return flag;
     }
 
     private static byte[] handleKey(Sm4Request request) {
