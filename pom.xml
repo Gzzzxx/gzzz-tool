@@ -81,7 +81,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>${spring-boot.version}</version>
                 <configuration>
-                    <mainClass>art.gzzz.Application</mainClass>
+                    <mainClass>tool.gzzz.Application</mainClass>
                 </configuration>
                 <executions>
                     <execution>
