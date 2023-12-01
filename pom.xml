@@ -3,10 +3,10 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>art.gzzz</groupId>
-    <artifactId>gzzz-art</artifactId>
+    <artifactId>gzzz-tool</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>gzzz-art</name>
-    <description>gzzz-art</description>
+    <name>gzzz-tool</name>
+    <description>gzzz-tool</description>
     <properties>
         <java.version>1.8</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
