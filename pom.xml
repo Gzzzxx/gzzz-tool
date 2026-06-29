@@ -2,11 +2,11 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>art.gzzz</groupId>
-    <artifactId>gzzz-tool</artifactId>
+    <groupId>art.cipherkit</groupId>
+    <artifactId>cipherkit</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>gzzz-tool</name>
-    <description>gzzz-tool</description>
+    <name>cipherkit</name>
+    <description>CipherKit - 对称加解密 RESTful 服务（SM4 / AES）</description>
     <properties>
         <java.version>1.8</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -81,7 +81,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>${spring-boot.version}</version>
                 <configuration>
-                    <mainClass>tool.gzzz.Application</mainClass>
+                    <mainClass>tool.cipherkit.Application</mainClass>
                 </configuration>
                 <executions>
                     <execution>
